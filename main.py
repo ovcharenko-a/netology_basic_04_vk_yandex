@@ -1,9 +1,9 @@
 import asyncio
 import logging
-# from yandexupload import YaUploader
+from yandexupload import YaUploader
 from vkdownload import VkDownload
 import os
-
+import requests
 
 async def main():
     # logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +28,19 @@ async def main():
     print("пока на этом всё")
 
 
+async def main_ya():
+    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+    # Храните токены в переменных окружения
+    YANDEX_TOKEN = os.environ['YANDEX_TOKEN']
+    ya_uploader = YaUploader(YANDEX_TOKEN)
+    url_ = "https://sun9-24.userapi.com/c9275/u1476954/-6/w_9cce7ccb.jpg"
+    await ya_uploader.upload_from_url(url_, remote_path="zh/op/ka/", remote_file="go.jpg")
+    # await ya_uploader.create_folder("go/vna/po/el")
+    # print(q)
+    await ya_uploader.session.close()
+
 if __name__ == '__main__':
     # main()
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.run_until_complete(main_ya())
