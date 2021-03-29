@@ -30,6 +30,10 @@ class YaUploader:
         self.pathes = []
         self.HEADERS["Authorization"] += token
 
+    async def get_status_from_url(self, _url):
+        async with self.session.get(_url, headers=self.HEADERS) as resp_link:
+            return await resp_link.json()
+
 
     async def create_folder(self, path: str):
         path = path.strip("/").split("/")
@@ -67,13 +71,14 @@ class YaUploader:
         async with self.session.post(host_get, headers=self.HEADERS, params=params) as resp:
             if resp.status == 202:
                 response = await resp.json()
-                logging.info(response)
-                async with self.session.get(response['href'], headers=self.HEADERS) as resp_link:
-                    logging.info(await resp_link.json())
+                logging.info(f"URL {input_file_url} успешно поставлен на загрузку ({response['href']})")
+
+                return remote_file, response['href']
             else:
-                logging.info(resp.status)
-                logging.info(await resp.json())
-            return await resp.json()
+                logging.debug(resp.status)
+                logging.info(f"URL {input_file_url} ОШИБКА:{await resp.json()}")
+                return None, None
+
 
 
 

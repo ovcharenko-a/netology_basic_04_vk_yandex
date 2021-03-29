@@ -75,8 +75,8 @@ class VkDownload:
         if type(source_json) == dict:
             logging.info(f"Разбор альбома {id_album}")
             # TODO - но вообще имя файла - это количество лайков
-            one_album = [{f"{one_img['id']}-{one_img['likes']['count']}": one_img['sizes'][-1]}
-                         for one_img in source_json['response']['items']]
+            one_album = {f"{one_img['id']}-{one_img['likes']['count']}": one_img['sizes'][-1]
+                         for one_img in source_json['response']['items']}
             # self.albums_links.append({id_album: one_album})
             self.albums_links[id_album] = one_album
             logging.info(f"Альбом {id_album} разобран на url'ы изображений")
