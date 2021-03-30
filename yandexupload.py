@@ -1,5 +1,4 @@
 """Модуль описывающий класс YaUploader"""
-import asyncio
 import aiohttp
 import logging
 
@@ -25,17 +24,31 @@ class YaUploader:
     }
 
     def __init__(self, token: str):
+        """
+        При создании класса будет открыта сессия aiohttp. Не забывать закрывать
+        :param token: токен доступа к Яндекс-диску
+        """
         self.token = token
         self.session = aiohttp.ClientSession()
         self.pathes = []
         self.HEADERS["Authorization"] += token
 
     async def get_status_from_url(self, _url):
-        async with self.session.get(_url, headers=self.HEADERS) as resp_link:
-            return await resp_link.json()
-
+        """
+        Метод получения результата асинхронной загрузки на Яндекс.Диск
+        :param _url: Ссылка проверки результат, возвращенная Яндекс Диском
+        :return:
+        """
+        async with self.session.get(_url, headers=self.HEADERS) as resp:
+            response = await resp.json()
+            return response["status"]
 
     async def create_folder(self, path: str):
+        """
+        Метод, создающий произвольную папку со всеми родительскими папками. Кэширует результаты в рамках одной сессии
+        :param path: Путь, который нужно создать на Яндекс Диске
+        :return:
+        """
         path = path.strip("/").split("/")
         if path in self.pathes:
             return
@@ -56,11 +69,16 @@ class YaUploader:
                         self.pathes.append(temp_path.copy())
                         logging.info(f'Найдена папка {temp_folder}')
                     else:
-                        logging.info(f"ошибка {resp.status}" - self.RESULT_KEY.get(resp.status), "...")
+                        logging.info(f"ошибка создания папки {resp.status} - {self.RESULT_KEY.get(resp.status)}...")
 
-
-    async def upload_from_url(self, input_file_url: str, remote_path: str="", remote_file: str="", overwrite: bool=True):
-        """Метод загружает удалённый файл на яндекс диск"""
+    async def upload_from_url(self, input_file_url: str, remote_path: str = "", remote_file: str = ""):
+        """
+        Метод, вызывающий загрузку на ЯндексДиск удаленного ресурса по URL
+        :param input_file_url: URL загружаемого файла
+        :param remote_path: целевая папка на Яндекс. Диске
+        :param remote_file: Имя итогового файла
+        :return: Возвращает имя файла и URL, по которому можно узнать результат асинхронной загрузки
+        """
         host_get = self.HOST + "/upload"
         params = {
             "url": input_file_url,
@@ -72,13 +90,9 @@ class YaUploader:
             if resp.status == 202:
                 response = await resp.json()
                 logging.info(f"URL {input_file_url} успешно поставлен на загрузку ({response['href']})")
-
-                return remote_file, response['href']
+                ret_res = response.get('href', None)
+                return remote_file, ret_res
             else:
                 logging.debug(resp.status)
                 logging.info(f"URL {input_file_url} ОШИБКА:{await resp.json()}")
                 return None, None
-
-
-
-

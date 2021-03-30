@@ -1,12 +1,12 @@
+"""Модуль описывающий класс VKDownload"""
 import asyncio
 import aiohttp
-import time
 import logging
 
 
 class VkDownload:
     """
-    Magic
+    Класс, для получения данных из ВК
     """
 
     URL_GET_ALBUMS = "photos.getAlbums"
@@ -14,7 +14,11 @@ class VkDownload:
     VERSION_API = "5.130"
     URL_METHODS = "https://api.vk.com/method/"
 
-    def __init__(self, id_owner, token):
+    def __init__(self, id_owner: int, token: str):
+        """
+        При создании класса будет открыта сессия aiohttp. Не забывать закрывать
+        :param token: токен доступа к Яндекс-диску
+        """
         self.id_owner = id_owner
         self.token = token
         self.albums = {}
@@ -23,8 +27,14 @@ class VkDownload:
         self.photos_sum = 0
         self.session = aiohttp.ClientSession()
 
-    async def http_post_to_json(self, url, method, params):
-        """Функция для получения результатов post запроса"""
+    async def http_post_to_json(self, url: str, method: str, params: dict):
+        """
+        Метод для получения результатов POST запроса к vk
+        :param url: базовый url
+        :param method: суффикс url конкретного метода
+        :param params: параметры POST-запроса
+        :return:
+        """
         async with self.session.post(url + method, params=params) as resp:
             if resp.status == 200:
                 response = await resp.json()
@@ -41,6 +51,10 @@ class VkDownload:
                 return resp.status
 
     async def get_albums_list(self):
+        """
+        Метод получения и сохранения списка альбомов пользователя
+        :return: словарь с описанием альбомов или 0 в случае ошибки
+        """
         params = {
             "access_token": self.token,
             "v": self.VERSION_API,
@@ -60,6 +74,11 @@ class VkDownload:
             return self.albums
 
     async def add_urls_from_album(self, id_album):
+        """
+        Метод получения и сохранения url'ов, относящихся к заданному альбому
+        :param id_album: идентификатор альбома
+        :return:
+        """
         params = {
             "access_token": self.token,
             "v": self.VERSION_API,
@@ -77,13 +96,16 @@ class VkDownload:
             # TODO - но вообще имя файла - это количество лайков
             one_album = {f"{one_img['id']}-{one_img['likes']['count']}": one_img['sizes'][-1]
                          for one_img in source_json['response']['items']}
-            # self.albums_links.append({id_album: one_album})
             self.albums_links[id_album] = one_album
             logging.info(f"Альбом {id_album} разобран на url'ы изображений")
         logging.debug(source_json)
         return source_json
 
     async def parse_photo_from_albums(self):
+        """
+        Метод получения и сохранения полного перечня URLов фотографий по всем полученым альбомам.
+        :return:
+        """
         if self.albums_count == 0:
             logging.info("альбомов нет")
             return
